@@ -12,10 +12,9 @@ import (
 	"time"
 )
 
-var email = ""      //Trimepay账户
-var password = ""   //密码
-var method = "1"    //1:支付宝  2:微信
-var supportTip = 30 //赞助小费，单位分，可为0
+var email = ""    //Trimepay账户
+var password = "" //密码
+var method = "1"  //1:支付宝  2:微信
 
 func main() {
 	urlHome := "https://api.trimepay.com/"
@@ -73,38 +72,20 @@ func main() {
 		addLog(errorLog.Error(), true)
 	}
 
-	if balance <= supportTip {
+	if balance <= 0 {
 		addLog("No enough Balance", true)
 	}
-	if supportTip > 0 {
-		requestBody = url.Values{}
-		requestBody.Set("email", "soda_mail@qq.com")
-		requestBody.Set("totalFee", strconv.Itoa(supportTip))
-		request, _ = http.NewRequest(
-			"POST",
-			urlHome+"merchant/transfers/p2p?CSRF"+string(csrf),
-			strings.NewReader(requestBody.Encode()))
-		request.Header.Set("Content-Type", "application/x-www-form-urlencoded")
-		for _, cookieIndex := range cookies {
-			request.AddCookie(cookieIndex)
-		}
-		response, errorLog = client.Do(request)
-		if errorLog != nil {
-			addLog(errorLog.Error(), true)
-		}
-	}
 
-	withdraw := balance - supportTip
-	if method == "1" && withdraw > 300000 {
-		withdraw = 300000
+	if method == "1" && balance > 300000 {
+		balance = 300000
 	}
-	if method == "2" && withdraw > 500000 {
-		withdraw = 500000
+	if method == "2" && balance > 500000 {
+		balance = 500000
 	}
 
 	requestBody = url.Values{}
 	requestBody.Set("withdrawMethod", method)
-	requestBody.Set("totalFee", strconv.Itoa(withdraw))
+	requestBody.Set("totalFee", strconv.Itoa(balance))
 	request, _ = http.NewRequest(
 		"POST",
 		urlHome+"merchant/withdraw/create?CSRF="+string(csrf),
