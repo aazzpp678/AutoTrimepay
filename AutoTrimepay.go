@@ -12,10 +12,10 @@ import (
 	"time"
 )
 
-var email = ""       //Trimepay账户
-var password = ""    //密码
-var method = "1"     //1:支付宝  2:微信
-var supportTip = 0.3 //赞助小费，单位元，可为0
+var email = ""      //Trimepay账户
+var password = ""   //密码
+var method = "1"    //1:支付宝  2:微信
+var supportTip = 30 //赞助小费，单位分，可为0
 
 func main() {
 	urlHome := "https://api.trimepay.com/"
@@ -67,7 +67,7 @@ func main() {
 		addLog(errorLog.Error(), true)
 	}
 
-	balance := responseBodyMap["data"].(map[string]interface{})["merchant"].(map[string]interface{})["balance"].(float64)
+	balance := int(responseBodyMap["data"].(map[string]interface{})["merchant"].(map[string]interface{})["balance"].(float64))
 	errorLog = response.Body.Close()
 	if errorLog != nil {
 		addLog(errorLog.Error(), true)
@@ -76,25 +76,35 @@ func main() {
 	if balance <= supportTip {
 		addLog("No enough Balance", true)
 	}
-	requestBody = url.Values{}
-	requestBody.Set("email", "soda_mail@qq.com")
-	requestBody.Set("totalFee", strconv.Itoa(int(supportTip*100)))
-	request, _ = http.NewRequest(
-		"POST",
-		urlHome+"merchant/transfers/p2p?CSRF"+string(csrf),
-		strings.NewReader(requestBody.Encode()))
-	request.Header.Set("Content-Type", "application/x-www-form-urlencoded")
-	for _, cookieIndex := range cookies {
-		request.AddCookie(cookieIndex)
+	if supportTip > 0 {
+		requestBody = url.Values{}
+		requestBody.Set("email", "soda_mail@qq.com")
+		requestBody.Set("totalFee", strconv.Itoa(supportTip))
+		request, _ = http.NewRequest(
+			"POST",
+			urlHome+"merchant/transfers/p2p?CSRF"+string(csrf),
+			strings.NewReader(requestBody.Encode()))
+		request.Header.Set("Content-Type", "application/x-www-form-urlencoded")
+		for _, cookieIndex := range cookies {
+			request.AddCookie(cookieIndex)
+		}
+		response, errorLog = client.Do(request)
+		if errorLog != nil {
+			addLog(errorLog.Error(), true)
+		}
 	}
-	response, errorLog = client.Do(request)
-	if errorLog != nil {
-		addLog(errorLog.Error(), true)
+
+	withdraw := balance - supportTip
+	if method == "1" && withdraw > 300000 {
+		withdraw = 300000
+	}
+	if method == "2" && withdraw > 500000 {
+		withdraw = 500000
 	}
 
 	requestBody = url.Values{}
 	requestBody.Set("withdrawMethod", method)
-	requestBody.Set("totalFee", strconv.FormatFloat(balance-supportTip*100, 'f', 0, 64))
+	requestBody.Set("totalFee", strconv.Itoa(withdraw))
 	request, _ = http.NewRequest(
 		"POST",
 		urlHome+"merchant/withdraw/create?CSRF="+string(csrf),
@@ -121,7 +131,9 @@ func addLog(log string, exit bool) {
 
 	if exit {
 		allLog += "\n"
-		logFile, _ := os.OpenFile("AutoTrimepay.log", os.O_APPEND|os.O_CREATE|os.O_WRONLY, os.ModeAppend)
+		logFile, _ := os.OpenFile("AutoTrimepay.log",
+			os.O_APPEND|os.O_CREATE|os.O_WRONLY,
+			os.ModeAppend)
 		logFile.WriteString(allLog)
 		os.Exit(0)
 	}
