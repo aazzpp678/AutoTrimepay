@@ -12,9 +12,11 @@ import (
 	"time"
 )
 
-var email = ""    //Trimepay账户
-var password = "" //密码
-var method = "1"  //1:支付宝  2:微信
+var email = ""      //Trimepay账户
+var password = ""   //密码
+var method = "1"    //1:支付宝  2:微信
+var alipayLimit = 0 //支付宝提现上限，单位分
+var wechatLimit = 0 //微信提现上限，单位分
 
 func main() {
 	urlHome := "https://api.trimepay.com/"
@@ -76,11 +78,11 @@ func main() {
 		addLog("No enough Balance", true)
 	}
 
-	if method == "1" && balance > 300000 {
-		balance = 300000
+	if method == "1" && balance > alipayLimit {
+		balance = alipayLimit
 	}
-	if method == "2" && balance > 500000 {
-		balance = 500000
+	if method == "2" && balance > wechatLimit {
+		balance = wechatLimit
 	}
 
 	requestBody = url.Values{}

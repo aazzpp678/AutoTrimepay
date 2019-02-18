@@ -22,7 +22,8 @@ curl -O https://raw.githubusercontent.com/CGDF-Github/AutoTrimepay/master/AutoTr
 var email = ""      //Trimepay账户
 var password = ""   //密码
 var method = "1"    //1:支付宝  2:微信
-var supportTip = 30 //赞助小费，单位分，可为0
+var alipayLimit = 0 //支付宝提现上限，单位分
+var wechatLimit = 0 //微信提现上限，单位分
 ```
 
 使用`crontab -e`添加定时提现任务
